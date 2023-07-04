@@ -9,7 +9,7 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-func Trickle(conn net.Conn) {
+func trickle(conn net.Conn) {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -64,4 +64,48 @@ func Trickle(conn net.Conn) {
 			}
 		})
 	})
+
+	buf := make([]byte, 1024)
+	for {
+		// read and process http responses
+		n, err := conn.Read(buf)
+		if err != nil {
+			panic(err)
+		}
+
+		var candidate webrtc.ICECandidateInit
+		var offer webrtc.SessionDescription
+
+		switch {
+		case json.Unmarshal(buf[:n], &offer) == nil && offer.SDP != "":
+			if err = pc.SetRemoteDescription(offer); err != nil {
+				panic(err)
+			}
+
+			answer, answerErr := pc.CreateAnswer(nil)
+			if answerErr != nil {
+				panic(answerErr)
+			}
+
+			if err = pc.SetLocalDescription(offer); err != nil {
+				panic(err)
+			}
+
+			outbound, marshalErr := json.Marshal(answer)
+			if marshalErr != nil {
+				panic(marshalErr)
+			}
+
+			if _, err = conn.Write(outbound); err != nil {
+				panic(err)
+			}
+
+		case json.Unmarshal(buf[:n], &candidate) == nil && candidate.Candidate != "":
+			if err = pc.AddICECandidate(candidate); err != nil {
+				panic(err)
+			}
+		default:
+			panic("Unknown message")
+		}
+	}
 }
