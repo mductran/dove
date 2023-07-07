@@ -9,7 +9,7 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-func trickle(conn net.Conn) {
+func gather(conn net.Conn) *webrtc.PeerConnection {
 	config := webrtc.Configuration{
 		ICEServers: []webrtc.ICEServer{
 			{
@@ -63,7 +63,17 @@ func trickle(conn net.Conn) {
 				}
 			}
 		})
+
+		// add print message for receiving from datachannel
+		dc.OnMessage(func(msg webrtc.DataChannelMessage) {
+			fmt.Printf("Receive message from data channel: %s, %s", dc.Label(), string(msg.Data))
+		})
 	})
+
+	return pc
+}
+
+func connect(conn net.Conn, pc *webrtc.PeerConnection) {
 
 	buf := make([]byte, 1024)
 	for {
