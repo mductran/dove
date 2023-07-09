@@ -45,4 +45,5 @@ require (
 	golang.org/x/term v0.9.0 // indirect
 	golang.org/x/text v0.10.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	moul.io/banner v1.0.1 // indirect
 )
