@@ -1,48 +1,11 @@
 package tui
 
 import (
-	"io/ioutil"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type App struct{}
-
-type ItemType int8
-
-type Item struct {
-	Path string
-	Size int64
-	Dir  bool
-}
-
-type ItemList struct {
-	items []Item
-}
-
-func ls(path string) []Item {
-	items := []Item{}
-
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, file := range files {
-		item := Item{
-			Path: file.Name(),
-			Dir:  file.Mode().IsDir(),
-			Size: file.Size(),
-		}
-		items = append(items, item)
-	}
-	return items
-}
-
-func list() ItemList {
-	return ItemList{
-		items: ls("."),
-	}
+type App struct {
+	items ItemList
 }
 
 func (app App) Init() tea.Cmd {
@@ -50,7 +13,7 @@ func (app App) Init() tea.Cmd {
 }
 
 func (app App) View() string {
-	return ""
+	return app.items.View()
 }
 
 func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -61,12 +24,16 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return app, tea.Quit
 		}
 	}
+
+	// hacky way to display current directory with update
+	app.items, _ = app.items.Update()
+
 	return app, nil
 }
 
 func RunTUI() {
-	app := App{}
-	p := tea.NewProgram(&app, tea.WithAltScreen())
+
+	p := tea.NewProgram(&App{items: ListDir()}, tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
