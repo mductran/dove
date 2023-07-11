@@ -2,10 +2,12 @@ package tui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type App struct {
-	items ItemList
+	itemView ItemModel
+	listView ListView
 }
 
 func (app App) Init() tea.Cmd {
@@ -13,7 +15,9 @@ func (app App) Init() tea.Cmd {
 }
 
 func (app App) View() string {
-	return app.items.View()
+	// add color
+	// return app.itemView.View()
+	return lipgloss.JoinHorizontal(lipgloss.Top, app.listView.View(), app.itemView.View())
 }
 
 func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -26,14 +30,15 @@ func (app App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// hacky way to display current directory with update
-	app.items, _ = app.items.Update()
+	app.listView, _ = app.listView.Update(msg)
+	app.itemView, _ = app.itemView.Update(ItemMsg{Item: app.listView.SelectItem()})
 
 	return app, nil
 }
 
 func RunTUI() {
 
-	p := tea.NewProgram(&App{items: ListDir()}, tea.WithAltScreen())
+	p := tea.NewProgram(&App{listView: ListDir()}, tea.WithAltScreen())
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
